@@ -55,11 +55,11 @@ const AgentDetail = () => {
                 <p><strong>Adresse:</strong> {agent.toerana || agent.adresse || 'Non renseignée'}</p>
             </div>
 
-            {agent.qrCodeData && (
+            {agent.id && (
                 <div className="mt-4 border-t pt-6 text-center">
                     <p className="mb-3 font-semibold text-gray-700">Code QR de l'Agent</p>
                     <img 
-                        src={`data:image/png;base64,${agent.qrCodeData}`} 
+                        src={`http://localhost:5296/api/User/generate-qr/${agent.id}`} 
                         alt="QR Code" 
                         className="w-48 h-48 mx-auto border shadow-sm p-2 bg-white" 
                         onError={(e) => { e.target.style.display = 'none'; }}

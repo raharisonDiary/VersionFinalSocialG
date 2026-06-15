@@ -4,6 +4,7 @@ using Core.Entities;
 using Application.DTOs;
 using QRCoder;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
@@ -18,7 +19,23 @@ namespace API.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ChefRegional")]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        {
+            return await _context.Users.ToListAsync();
+        }
+
+        [Authorize(Roles = "Admin,ChefRegional")]
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> GetUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        [Authorize(Roles = "Admin,ChefRegional")]
         [HttpPost("create")]
         public async Task<ActionResult<User>> CreateUser(UserDto userDto)
         {
@@ -40,7 +57,18 @@ namespace API.Controllers
             return Ok(user);
         }
 
-        [Authorize]
+        [Authorize(Roles = "Admin,ChefRegional")]
+[HttpDelete("{id}")]
+public async Task<IActionResult> DeleteUser(int id)
+{
+    var user = await _context.Users.FindAsync(id);
+    if (user == null) return NotFound();
+    _context.Users.Remove(user);
+    await _context.SaveChangesAsync();
+    return NoContent();
+}
+
+        [AllowAnonymous]
         [HttpGet("generate-qr/{id}")]
         public IActionResult GenerateQrCode(int id)
         {

@@ -56,9 +56,14 @@ namespace API.Controllers
         [HttpPost("scan")]
         public async Task<IActionResult> LoginScan([FromBody] LoginRequest request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.QrCodeData == request.Email);
+            var qrCode = request.Email?.Trim();
 
-            if (user == null) return Unauthorized("Code QR invalide.");
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.QrCodeData == qrCode);
+
+            if (user == null)
+            {
+                return Unauthorized("Code QR invalide.");
+            }
 
             return Ok(new { token = GenerateToken(user), role = user.Role });
         }

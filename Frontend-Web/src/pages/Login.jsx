@@ -25,14 +25,15 @@ const Login = () => {
                 localStorage.setItem('role', res.data.role);
                 Swal.fire('Succès', 'Connexion réussie', 'success').then(() => navigate('/home'));
             })
-            .catch((err) => {
-                console.error(err);
+            .catch(() => {
                 Swal.fire('Erreur', 'Email ou mot de passe incorrect', 'error');
             });
     };
 
     const processScan = useCallback((qrCodeData) => {
-        publicApi.post('/Login/scan', { email: qrCodeData, password: "" })
+        const cleanedQr = qrCodeData ? qrCodeData.trim() : "";
+        
+        publicApi.post('/Login/scan', { email: cleanedQr, password: "" })
             .then((res) => {
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('role', res.data.role);

@@ -7,12 +7,12 @@ const AgentForm = () => {
     });
     const [file, setFile] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [qrCode, setQrCode] = useState(null);
+    const [agentId, setAgentId] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        setQrCode(null);
+        setAgentId(null);
         
         const data = new FormData();
         data.append('Nom', formData.nom);
@@ -29,7 +29,7 @@ const AgentForm = () => {
 
         try {
             const response = await agentService.create(data);
-            setQrCode(response.data.qrCodeData); 
+            setAgentId(response.data.id);
             alert("Agent enregistré avec succès !");
             setFormData({ nom: '', prenom: '', cin: '', adresse: '', whatsapp: '+261', email: '' });
             setFile(null);
@@ -58,10 +58,15 @@ const AgentForm = () => {
                 </button>
             </form>
 
-            {qrCode && (
+            {agentId && (
                 <div className="p-4 border rounded bg-white shadow-sm text-center">
-                    <h3 className="font-bold mb-2">Code QR (Identifiant) :</h3>
-                    <p className="bg-gray-100 p-2 rounded text-sm break-all">{qrCode}</p>
+                    <h3 className="font-bold mb-2">Code QR de l'Agent :</h3>
+                    <img 
+                        src={`http://localhost:5296/api/User/generate-qr/${agentId}`} 
+                        alt="QR Code" 
+                        className="w-48 h-48 mx-auto border shadow-sm p-2 bg-white" 
+                    />
+                    <p className="mt-2 text-xs text-gray-500">Capturez cette image pour le login</p>
                 </div>
             )}
         </div>

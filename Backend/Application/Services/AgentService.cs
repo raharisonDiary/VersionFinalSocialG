@@ -3,8 +3,6 @@ using Application.Interfaces;
 using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
-using QRCoder;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Application.Services
@@ -18,16 +16,6 @@ namespace Application.Services
         {
             _context = context;
             _env = env;
-        }
-
-        private string GenerateQrCodeBase64(string text)
-        {
-            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-            using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q))
-            using (PngByteQRCode qrCode = new PngByteQRCode(qrCodeData))
-            {
-                return Convert.ToBase64String(qrCode.GetGraphic(20));
-            }
         }
 
         public async Task<User> CreateAgentAsync(UserDto dto, int chefId)
@@ -63,7 +51,7 @@ namespace Application.Services
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 CreatedById = chefId,
                 PhotoPath = savedPhotoPath,
-                QrCodeData = GenerateQrCodeBase64(dto.Email)
+                QrCodeData = Guid.NewGuid().ToString()
             };
 
             _context.Users.Add(agent);
