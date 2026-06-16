@@ -21,9 +21,16 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] UserDto dto)
         {
-            var chefId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var result = await _agentService.CreateAgentAsync(dto, chefId);
-            return Ok(result);
+            try
+            {
+                var chefId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                var result = await _agentService.CreateAgentAsync(dto, chefId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
@@ -35,12 +42,28 @@ namespace API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("qr/{id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetQrCode(int id)
+        {
+            var qrBytes = await _agentService.GetAgentQrCodeAsync(id);
+            if (qrBytes == null) return NotFound();
+            return File(qrBytes, "image/png");
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromForm] UserDto dto)
         {
-            var chefId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            await _agentService.UpdateAgentAsync(id, dto, chefId);
-            return NoContent();
+            try
+            {
+                var chefId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                await _agentService.UpdateAgentAsync(id, dto, chefId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet]
@@ -54,9 +77,16 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var chefId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            await _agentService.DeleteAgentAsync(id, chefId);
-            return NoContent();
+            try
+            {
+                var chefId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                await _agentService.DeleteAgentAsync(id, chefId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

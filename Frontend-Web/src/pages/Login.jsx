@@ -32,7 +32,6 @@ const Login = () => {
 
     const processScan = useCallback((qrCodeData) => {
         const cleanedQr = qrCodeData ? qrCodeData.trim() : "";
-        
         publicApi.post('/Login/scan', { email: cleanedQr, password: "" })
             .then((res) => {
                 localStorage.setItem('token', res.data.token);
@@ -43,7 +42,8 @@ const Login = () => {
     }, [navigate]);
 
     const startCamera = useCallback(async () => {
-        if (!document.getElementById("reader")) return;
+        const readerElement = document.getElementById("reader");
+        if (!readerElement) return;
         
         try {
             html5QrCode.current = new Html5Qrcode("reader");
@@ -55,15 +55,14 @@ const Login = () => {
                     processScan(decodedText);
                 }
             );
-        } catch (err) {
-            console.error("Erreur caméra :", err);
+        } catch {
             Swal.fire('Erreur', 'Impossible d\'accéder à la caméra.', 'error');
         }
     }, [processScan]);
 
     useEffect(() => {
         if (isAgentMode) {
-            const timer = setTimeout(startCamera, 500);
+            const timer = setTimeout(startCamera, 600);
             return () => {
                 clearTimeout(timer);
                 if (html5QrCode.current?.isScanning) {
@@ -74,38 +73,87 @@ const Login = () => {
     }, [isAgentMode, startCamera]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-            <div className="flex flex-col md:flex-row w-full max-w-4xl bg-white rounded-[30px] shadow-2xl overflow-hidden min-h-[500px]">
-                <motion.div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white">
-                    <h2 className="text-3xl font-bold mb-8 text-indigo-600">{isAgentMode ? "Connexion Agent / Chef" : "Connexion Admin"}</h2>
+        <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+            <motion.div 
+                layout
+                className="flex flex-col md:flex-row w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[550px]"
+            >
+                <motion.div 
+                    layout
+                    className={`w-full md:w-1/2 p-12 flex flex-col justify-center bg-white ${isAgentMode ? 'md:order-2' : 'md:order-1'}`}
+                >
+                    <h2 className="text-3xl font-extrabold mb-8 text-slate-800">
+                        {isAgentMode ? "Accès Agent / Chef" : "Connexion Admin"}
+                    </h2>
                     
-                    <AnimatePresence mode="wait">
-                        {!isAgentMode ? (
-                            <motion.div key="admin" className="space-y-4">
-                                <input className="w-full p-4 border rounded-xl" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-                                <input className="w-full p-4 border rounded-xl" type="password" placeholder="Mot de passe" onChange={(e) => setPassword(e.target.value)} />
-                                <button onClick={handleAdminLogin} className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700">SE CONNECTER</button>
-                            </motion.div>
-                        ) : (
-                            <motion.div key="agent">
-                                <div id="reader" style={{ width: "100%", height: "250px" }} className="border-2 border-dashed rounded-xl overflow-hidden mb-4 bg-gray-100"></div>
-                                <button onClick={() => fileInputRef.current.click()} className="w-full bg-gray-800 text-white p-3 rounded-xl font-bold">IMPORTER UNE PHOTO QR</button>
-                                <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={async (e) => {
-                                    const qr = new Html5Qrcode("reader");
-                                    try { 
-                                        const text = await qr.scanFile(e.target.files[0], true);
-                                        processScan(text);
-                                    } catch { Swal.fire('Erreur', 'Aucun code QR trouvé', 'error'); }
-                                }} />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                    <button onClick={() => setIsAgentMode(!isAgentMode)} className="mt-6 text-indigo-600 underline text-sm">{isAgentMode ? "Retour mode Admin" : "Passer en mode Agent / Chef"}</button>
+                    <div className="relative">
+                        <AnimatePresence mode="wait">
+                            {!isAgentMode ? (
+                                <motion.div 
+                                    key="admin"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                    className="space-y-4"
+                                >
+                                    <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
+                                    <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" type="password" placeholder="Mot de passe" onChange={(e) => setPassword(e.target.value)} />
+                                    <motion.button 
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleAdminLogin} 
+                                        className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-lg"
+                                    >
+                                        SE CONNECTER
+                                    </motion.button>
+                                </motion.div>
+                            ) : (
+                                <motion.div 
+                                    key="agent"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                >
+                                    <div id="reader" className="w-full h-[250px] border-2 border-dashed border-slate-300 rounded-xl overflow-hidden mb-4 bg-slate-50 flex items-center justify-center"></div>
+                                    <motion.button 
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => fileInputRef.current.click()} 
+                                        className="w-full bg-slate-800 text-white p-3 rounded-xl font-bold"
+                                    >
+                                        IMPORTER UNE PHOTO QR
+                                    </motion.button>
+                                    <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={async (e) => {
+                                        const qr = new Html5Qrcode("reader");
+                                        try { 
+                                            const text = await qr.scanFile(e.target.files[0], true);
+                                            processScan(text);
+                                        } catch { Swal.fire('Erreur', 'Aucun code QR trouvé', 'error'); }
+                                    }} />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <motion.button 
+                        whileHover={{ x: 5 }}
+                        onClick={() => setIsAgentMode(!isAgentMode)} 
+                        className="mt-8 text-indigo-600 font-semibold text-sm hover:underline self-start"
+                    >
+                        {isAgentMode ? "← Retour connexion Admin" : "Passer en mode Agent / Chef →"}
+                    </motion.button>
                 </motion.div>
-                <div className="hidden md:flex w-1/2 bg-slate-900 text-white flex-col justify-center items-center p-12">
-                    <h1 className="text-5xl font-bold mb-3">SOCIALGASY</h1>
-                </div>
-            </div>
+
+                <motion.div 
+                    layout
+                    className={`hidden md:flex w-1/2 bg-gradient-to-br from-indigo-600 to-slate-900 text-white flex-col justify-center items-center p-12 ${isAgentMode ? 'md:order-1' : 'md:order-2'}`}
+                >
+                    <h1 className="text-5xl font-black tracking-tight">SOCIALGASY</h1>
+                    <p className="mt-2 text-indigo-200 font-medium tracking-widest uppercase text-sm">Système de gestion</p>
+                </motion.div>
+            </motion.div>
         </div>
     );
 };

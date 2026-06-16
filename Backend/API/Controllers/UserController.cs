@@ -5,6 +5,8 @@ using Application.DTOs;
 using QRCoder;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.IO;
 
 namespace API.Controllers
 {
@@ -35,6 +37,61 @@ namespace API.Controllers
             return Ok(user);
         }
 
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<ActionResult<User>> GetProfile()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+            var user = await _context.Users.FindAsync(int.Parse(userId));
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        [Authorize]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile(User updatedUser)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+            var user = await _context.Users.FindAsync(int.Parse(userId));
+            if (user == null) return NotFound();
+
+            user.Nom = updatedUser.Nom;
+            user.Prenom = updatedUser.Prenom;
+            user.CIN = updatedUser.CIN;
+            user.Email = updatedUser.Email;
+            user.WhatsApp = updatedUser.WhatsApp;
+            user.Toerana = updatedUser.Toerana;
+
+            await _context.SaveChangesAsync();
+            return Ok(user);
+        }
+
+        [Authorize]
+        [HttpPost("upload-photo")]
+        public async Task<IActionResult> UploadPhoto(IFormFile file)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+            var user = await _context.Users.FindAsync(int.Parse(userId));
+            if (user == null) return NotFound();
+
+            if (file == null || file.Length == 0) return BadRequest("No file uploaded");
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine("wwwroot", fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            user.PhotoPath = fileName;
+            await _context.SaveChangesAsync();
+            return Ok(new { photoPath = fileName });
+        }
+
         [Authorize(Roles = "Admin,ChefRegional")]
         [HttpPost("create")]
         public async Task<ActionResult<User>> CreateUser(UserDto userDto)
@@ -58,15 +115,15 @@ namespace API.Controllers
         }
 
         [Authorize(Roles = "Admin,ChefRegional")]
-[HttpDelete("{id}")]
-public async Task<IActionResult> DeleteUser(int id)
-{
-    var user = await _context.Users.FindAsync(id);
-    if (user == null) return NotFound();
-    _context.Users.Remove(user);
-    await _context.SaveChangesAsync();
-    return NoContent();
-}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
 
         [AllowAnonymous]
         [HttpGet("generate-qr/{id}")]

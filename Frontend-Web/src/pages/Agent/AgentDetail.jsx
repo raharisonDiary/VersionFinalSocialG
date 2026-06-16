@@ -1,78 +1,125 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Edit3, Mail, Smartphone, IdCard, MapPin, QrCode, Loader2, X, User } from 'lucide-react';
 import agentService from '../../services/agentService';
 
 const AgentDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [agent, setAgent] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isQrOpen, setIsQrOpen] = useState(false);
+    const [qrSrc, setQrSrc] = useState(null);
 
     useEffect(() => {
         const fetchAgent = async () => {
             try {
                 const response = await agentService.getById(id);
                 setAgent(response.data);
+                
+                const blobUrl = await agentService.getQrBlob(id);
+                setQrSrc(blobUrl);
             } catch (error) {
-                console.error("Erreur:", error);
+                console.error("Error:", error);
             } finally {
                 setLoading(false);
             }
         };
         fetchAgent();
+
+        return () => {
+            if (qrSrc) URL.revokeObjectURL(qrSrc);
+        };
     }, [id]);
 
-    if (loading) return <div className="p-4 text-center">Chargement...</div>;
-    if (!agent) return <div className="p-4 text-center text-red-500">Agent introuvable.</div>;
-
     const getPhotoUrl = () => {
-        if (!agent.photoPath) return null;
+        if (!agent?.photoPath) return null;
         if (agent.photoPath.startsWith('http')) return agent.photoPath;
         return `http://localhost:5296/${agent.photoPath.replace(/\\/g, '/')}`;
     };
 
-    return (
-        <div className="p-6 border rounded-xl bg-white shadow-xl max-w-lg mx-auto mt-10">
-            <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Détails de l'Agent</h2>
-            
-            <div className="flex flex-col items-center mb-8">
-                {agent.photoPath ? (
-                    <img 
-                        src={getPhotoUrl()} 
-                        alt="Profil" 
-                        className="w-32 h-32 object-cover rounded-full border-4 border-blue-100 shadow-md mb-4" 
-                        onError={(e) => { e.target.style.display = 'none'; }} 
-                    />
-                ) : (
-                    <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 text-gray-500 text-xs">Pas de photo</div>
-                )}
-                <h3 className="text-xl font-semibold text-gray-900">{agent.nom || 'Inconnu'} {agent.prenom || ''}</h3>
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3 mb-6">
-                <p><strong>CIN:</strong> {agent.cin || 'Non renseigné'}</p>
-                <p><strong>Email:</strong> {agent.email || 'Non renseigné'}</p>
-                <p><strong>WhatsApp:</strong> {agent.whatsapp || agent.whatsApp || 'Non renseigné'}</p>
-                <p><strong>Adresse:</strong> {agent.toerana || agent.adresse || 'Non renseignée'}</p>
-            </div>
-
-            {agent.id && (
-                <div className="mt-4 border-t pt-6 text-center">
-                    <p className="mb-3 font-semibold text-gray-700">Code QR de l'Agent</p>
-                    <img 
-                        src={`http://localhost:5296/api/User/generate-qr/${agent.id}`} 
-                        alt="QR Code" 
-                        className="w-48 h-48 mx-auto border shadow-sm p-2 bg-white" 
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                </div>
-            )}
-
-            <div className="mt-8 text-center">
-                <Link to="/home/agents/list" className="bg-gray-600 text-white px-8 py-2 rounded-lg hover:bg-gray-700 transition">
-                    Retour à la liste
-                </Link>
-            </div>
+    if (loading) return (
+        <div className="flex justify-center items-center min-h-screen">
+            <Loader2 className="animate-spin text-indigo-600" size={48} />
         </div>
+    );
+
+    if (!agent) return <div className="p-6 text-center text-slate-500">Agent not found.</div>;
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl mx-auto px-2 md:px-4 py-6">
+            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+                <div className="h-32 bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center px-4 md:px-6">
+                    <button onClick={() => navigate(-1)} className="flex items-center text-white bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full font-bold transition-all text-sm">
+                        <ArrowLeft size={16} className="mr-2" /> Retour
+                    </button>
+                </div>
+
+                <div className="px-4 md:px-6 pb-8 -mt-6">
+                    <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-28 h-28 rounded-full border-4 border-white shadow-lg bg-slate-200 overflow-hidden mb-4 flex items-center justify-center">
+                                {getPhotoUrl() ? (
+                                    <img src={getPhotoUrl()} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <User size={48} className="text-slate-400" />
+                                )}
+                            </div>
+                            <h2 className="text-xl md:text-2xl font-black text-slate-800 uppercase">{agent.nom} {agent.prenom}</h2>
+                        </div>
+                        
+                        <div className="space-y-5">
+                            {[
+                                { label: 'CIN', value: agent.cin, icon: <IdCard size={14} /> },
+                                { label: 'Adresse', value: agent.toerana || agent.adresse, icon: <MapPin size={14} /> },
+                                { label: 'WhatsApp', value: agent.whatsapp || agent.whatsApp, icon: <Smartphone size={14} /> },
+                                { label: 'Email', value: agent.email, icon: <Mail size={14} /> },
+                            ].map((item, idx) => (
+                                <div key={idx} className="border-b border-slate-50 pb-2">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center mb-1">
+                                        {item.icon} <span className="ml-1">{item.label}</span>
+                                    </p>
+                                    <p className="font-bold text-slate-800 text-base md:text-lg">{item.value || 'Not provided'}</p>
+                                </div>
+                            ))}
+
+                            {qrSrc && (
+                                <div className="bg-slate-50 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-all" onClick={() => setIsQrOpen(true)}>
+                                    <div>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase flex items-center mb-1">
+                                            <QrCode size={12} className="mr-1" /> QR Code
+                                        </p>
+                                        <p className="text-xs text-slate-600">Cliquez pour agrandir</p>
+                                    </div>
+                                    <img src={qrSrc} alt="QR Code" className="w-16 h-16 border bg-white p-1 rounded-lg object-contain" />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <button className="w-full sm:w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 py-4 rounded-2xl font-bold transition-all" onClick={() => navigate('/home/agents/list')}>Liste</button>
+                        <button className="w-full sm:w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-bold shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 transition-all" onClick={() => navigate(`/home/agents/edit/${agent.id}`)}>
+                            <Edit3 size={18} /> Modifier
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {isQrOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setIsQrOpen(false)}>
+                        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="bg-white p-4 rounded-3xl shadow-2xl relative">
+                            <button className="absolute -top-4 -right-4 bg-white p-2 rounded-full shadow-lg text-slate-600" onClick={() => setIsQrOpen(false)}>
+                                <X size={20} />
+                            </button>
+                            <img src={qrSrc} alt="QR Code Large" className="w-80 h-80 object-contain" />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 

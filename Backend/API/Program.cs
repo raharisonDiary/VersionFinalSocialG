@@ -15,7 +15,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddScoped<IChefRegionalService, ChefRegionalService>();
-
 builder.Services.AddScoped<IAgentService, AgentService>();
 
 builder.Services.AddCors(options => {
@@ -43,18 +42,16 @@ builder.Services.AddControllers()
 
 var app = builder.Build();
 
-app.UseStaticFiles();
-
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
-    RequestPath = ""
+    FileProvider = new PhysicalFileProvider(Path.Combine(builder.Environment.ContentRootPath, "wwwroot")),
+    RequestPath = "/uploads"
 });
 
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseStaticFiles();
 
 app.Run();

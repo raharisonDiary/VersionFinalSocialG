@@ -4,6 +4,7 @@ using Core.Entities;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
+using QRCoder;
 
 namespace Application.Services
 {
@@ -21,7 +22,7 @@ namespace Application.Services
         public async Task<User> CreateAgentAsync(UserDto dto, int chefId)
         {
             if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-                throw new Exception("Cet email est déjà utilisé.");
+                throw new Exception("Email already in use.");
 
             string? savedPhotoPath = null;
             if (dto.Photo != null)
@@ -121,6 +122,19 @@ namespace Application.Services
             {
                 _context.Users.Remove(agent);
                 await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<byte[]?> GetAgentQrCodeAsync(int id)
+        {
+            var agent = await _context.Users.FindAsync(id);
+            if (agent == null || string.IsNullOrEmpty(agent.QrCodeData)) return null;
+
+            using (var qrGenerator = new QRCodeGenerator())
+            {
+                var qrData = qrGenerator.CreateQrCode(agent.QrCodeData, QRCodeGenerator.ECCLevel.Q);
+                var qrCode = new PngByteQRCode(qrData);
+                return qrCode.GetGraphic(20);
             }
         }
     }

@@ -10,5 +10,6 @@ namespace Application.Interfaces
         Task<IEnumerable<User>> GetAgentsByChefIdAsync(int chefId);
         Task UpdateAgentAsync(int id, UserDto dto, int chefId);
         Task DeleteAgentAsync(int id, int chefId);
+        Task<byte[]?> GetAgentQrCodeAsync(int id);
     }
 }

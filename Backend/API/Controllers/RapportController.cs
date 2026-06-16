@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using Infrastructure.Data;
 using Core.Entities;
-using API.DTOs; 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
@@ -14,37 +12,38 @@ namespace API.Controllers
     {
         private readonly AppDbContext _context;
 
-        public RapportController(AppDbContext context)
+        public RapportController(AppDbContext context) => _context = context;
+
+        [HttpPost("send")]
+        public async Task<IActionResult> SendRapport(Rapport rapport)
         {
-            _context = context;
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Chef")]
-        public async Task<IActionResult> EnvoyerRapport(RapportDto dto)
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null) return Unauthorized();
-
-            var rapport = new Rapport
-            {
-                NomEmetteur = dto.Nom,
-                CinEmetteur = dto.Cin,
-                Contenu = dto.Contenu,
-                UserId = int.Parse(userIdClaim)
-            };
-
             _context.Rapports.Add(rapport);
             await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Rapport envoyé avec succès" });
+            return Ok(rapport);
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<IEnumerable<Rapport>>> GetRapports()
+        public async Task<ActionResult<IEnumerable<Rapport>>> GetAll() 
+            => await _context.Rapports.OrderByDescending(r => r.DateSent).ToListAsync();
+
+        [HttpPut("mark-seen/{id}")]
+        public async Task<IActionResult> MarkAsSeen(int id)
         {
-            return await _context.Rapports.ToListAsync();
+            var rapport = await _context.Rapports.FindAsync(id);
+            if (rapport == null) return NotFound();
+            rapport.IsSeen = true;
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPost("reply/{id}")]
+        public async Task<IActionResult> Reply(int id, [FromBody] string reply)
+        {
+            var rapport = await _context.Rapports.FindAsync(id);
+            if (rapport == null) return NotFound();
+            rapport.AdminReply = reply;
+            await _context.SaveChangesAsync();
+            return Ok(rapport);
         }
     }
 }

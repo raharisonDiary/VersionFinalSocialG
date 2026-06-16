@@ -152,27 +152,58 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<string>("CinEmetteur")
+                    b.Property<string>("AdminReply")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ChefCin")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Contenu")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("DateEnvoi")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("NomEmetteur")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("UserId")
+                    b.Property<int>("ChefId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.Property<string>("ChefNom")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
-                    b.HasIndex("UserId");
+                    b.Property<string>("ChefPrenom")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Communes")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("DateSent")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Districts")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Fokontany")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsSeen")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("NombreAgents")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
 
                     b.ToTable("Rapports");
                 });
@@ -244,17 +275,6 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Menage");
-                });
-
-            modelBuilder.Entity("Core.Entities.Rapport", b =>
-                {
-                    b.HasOne("Core.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Core.Entities.Menage", b =>
