@@ -12,10 +12,8 @@ const Menages = () => {
             animate={{ opacity: 1 }}
             className="space-y-6 w-full max-w-2xl mx-auto px-4"
         >
-            {/* Formulaire MenageForm efa namboarina */}
             <MenageForm />
 
-            {/* Bokotra Voir la liste namboarina */}
             <motion.button 
                 whileHover={{ scale: 1.01, backgroundPosition: "100% 0%" }}
                 whileTap={{ scale: 0.99 }}
